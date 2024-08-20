@@ -22,27 +22,23 @@ function PDOGTModal({ isOpen, onClose, pdogtData }) {
   );
 }
 
+
 function UserTable() {
   const [clientes, setClientes] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [nuevoCliente, setNuevoCliente] = useState({
     phone: '',
     first_name: '',
-    plasticidad: '',
-    permeabilidad: '',
-    densidad: '',
-    porosidad: '',
-    oleosidad: '',
-    hebra: '',
     textura: '',
     compras: ''
   });
   const [clienteEditando, setClienteEditando] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [totalClientes, setTotalClientes] = useState(0);
+  const [startIndex, setStartIndex] = useState(1);
+  const formularioRef = useRef(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPDOGT, setSelectedPDOGT] = useState(null);
-  const formularioRef = useRef(null);
 
   useEffect(() => {
     fetchUsers();
@@ -69,16 +65,12 @@ function UserTable() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNuevoCliente(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+    setNuevoCliente({ ...nuevoCliente, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log('Enviando datos:', nuevoCliente);
       if (clienteEditando) {
         await axios.put(`http://127.0.0.1:8000/clientes/${clienteEditando.unique_id}`, nuevoCliente);
       } else {
@@ -86,18 +78,7 @@ function UserTable() {
       }
       fetchUsers();
       fetchTotalClients();
-      setNuevoCliente({
-        phone: '',
-        first_name: '',
-        plasticidad: '',
-        permeabilidad: '',
-        densidad: '',
-        porosidad: '',
-        oleosidad: '',
-        hebra: '',
-        textura: '',
-        compras: ''
-      });
+      setNuevoCliente({ phone: '', first_name: '', textura: '', compras: '' });
       setClienteEditando(null);
       setMostrarFormulario(false);
     } catch (error) {
@@ -128,27 +109,13 @@ function UserTable() {
 
   const handleCancelEdit = () => {
     setClienteEditando(null);
-    setNuevoCliente({
-      phone: '',
-      first_name: '',
-      plasticidad: '',
-      permeabilidad: '',
-      densidad: '',
-      porosidad: '',
-      oleosidad: '',
-      hebra: '',
-      textura: '',
-      compras: ''
-    });
+    setNuevoCliente({ phone: '', first_name: '', textura: '', compras: '' });
     setMostrarFormulario(false);
   };
-
   const handleOpenModal = (cliente) => {
-    console.log('Cliente seleccionado para modal:', cliente);
     setSelectedPDOGT(cliente);
     setModalOpen(true);
   };
-
   const clientesFiltrados = clientes.filter(cliente =>
     Object.values(cliente).some(value =>
       value.toString().toLowerCase().includes(filtro.toLowerCase())
@@ -183,7 +150,6 @@ function UserTable() {
           {mostrarFormulario ? 'Cancelar' : 'Agregar nuevo cliente'}
         </button>
       </div>
-
       {mostrarFormulario && (
         <form ref={formularioRef} onSubmit={handleSubmit} className={styles.formContainer}>
           <input
@@ -191,78 +157,30 @@ function UserTable() {
             value={nuevoCliente.phone}
             onChange={handleInputChange}
             placeholder="WhatsApp"
-            className={styles.inputField}
           />
           <input
             name="first_name"
             value={nuevoCliente.first_name}
             onChange={handleInputChange}
             placeholder="Nombre"
-            className={styles.inputField}
-          />
-          <input
-            name="plasticidad"
-            value={nuevoCliente.plasticidad}
-            onChange={handleInputChange}
-            placeholder="Plasticidad"
-            className={styles.inputField}
-          />
-          <input
-            name="permeabilidad"
-            value={nuevoCliente.permeabilidad}
-            onChange={handleInputChange}
-            placeholder="Permeabilidad"
-            className={styles.inputField}
-          />
-          <input
-            name="densidad"
-            value={nuevoCliente.densidad}
-            onChange={handleInputChange}
-            placeholder="Densidad"
-            className={styles.inputField}
-          />
-          <input
-            name="porosidad"
-            value={nuevoCliente.porosidad}
-            onChange={handleInputChange}
-            placeholder="Porosidad"
-            className={styles.inputField}
-          />
-          <input
-            name="oleosidad"
-            value={nuevoCliente.oleosidad}
-            onChange={handleInputChange}
-            placeholder="Oleosidad"
-            className={styles.inputField}
-          />
-          <input
-            name="hebra"
-            value={nuevoCliente.hebra}
-            onChange={handleInputChange}
-            placeholder="Hebra"
-            className={styles.inputField}
           />
           <input
             name="textura"
             value={nuevoCliente.textura}
             onChange={handleInputChange}
-            placeholder="Textura"
-            className={styles.inputField}
+            placeholder="PDOGT"
           />
           <input
             name="compras"
             value={nuevoCliente.compras}
             onChange={handleInputChange}
             placeholder="Compras"
-            className={styles.inputField}
           />
-          <button type="submit" className={styles.submitButton}>
+          <button type="submit">
             {clienteEditando ? 'Actualizar' : 'Crear'}
           </button>
           {clienteEditando && (
-            <button type="button" onClick={handleCancelEdit} className={styles.cancelButton}>
-              Cancelar edición
-            </button>
+            <button type="button" onClick={handleCancelEdit}>Cancelar edición</button>
           )}
         </form>
       )}
@@ -285,18 +203,16 @@ function UserTable() {
               <td>{cliente.phone}</td>
               <td>{cliente.first_name}</td>
               <td>
-                <button onClick={() => handleOpenModal(cliente)} className={styles.viewDetailsButton}>
+                <button className={styles.viewButton} onClick={() => handleOpenModal(cliente)}>
                   Ver
                 </button>
               </td>
               <td>{cliente.compras}</td>
               <td>
-                <button onClick={() => handleEdit(cliente)} className={styles.editButton}>
-                  Editar
-                </button>
-                <button onClick={() => handleDelete(cliente.unique_id)} className={styles.deleteButton}>
-                  Eliminar
-                </button>
+                <div className={styles.actionButtonContainer}>
+                  <button className={styles.actionButton} onClick={() => handleEdit(cliente)}>Editar</button>
+                  <button className={styles.actionButton} onClick={() => handleDelete(cliente.unique_id)}>Eliminar</button>
+                </div>
               </td>
             </tr>
           ))}

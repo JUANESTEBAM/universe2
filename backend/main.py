@@ -1,4 +1,5 @@
 from fastapi.middleware.cors import CORSMiddleware
+<<<<<<< HEAD
 from fastapi import FastAPI, HTTPException, Query
 from typing import List, Optional
 from config import collection  
@@ -13,11 +14,24 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
+=======
+from fastapi import FastAPI, HTTPException,Query
+from typing import List,Optional
+from config import collection  
+from bson import ObjectId
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Cambia esto al puerto de tu frontend
+>>>>>>> d024079 (Displaying user data on the frontend)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 # Modelo de datos para Pydantic
 class User(BaseModel):
     first_name: str
@@ -35,6 +49,8 @@ def generate_unique_id():
     return str(uuid.uuid4())
 
 
+=======
+>>>>>>> d024079 (Displaying user data on the frontend)
 @app.get("/clientes/", response_model=List[dict])
 async def obtener_clientes():
     try:
