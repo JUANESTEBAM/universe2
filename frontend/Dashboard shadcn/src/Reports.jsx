@@ -10,26 +10,13 @@ export default function Reports() {
   const handleQuestionSubmit = async (e) => {
     e.preventDefault();
 
-    const apiKey = "sk-DZUk9uSguqPsA8c4TvO-qnW97E9G8n-hUgJM4-8NjvT3BlbkFJ_ySgtUXKX-OAfZBiTyxP2pqMWvnpsLOIxftQE5UwoA";  // <--- Reemplaza "TU_API_KEY" por tu clave de OpenAI
-
-    if (!apiKey) {
-      setAnswer('Error: No se encontró la clave de API.');
-      return;
-    }
-
     try {
-      const response = await fetch('https://api.openai.com/v1/completions', {
+      const response = await fetch('http://localhost:8000/api/ask', {  // Llama al backend
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,  // Agrega la API Key aquí
         },
-        body: JSON.stringify({
-          model: 'text-davinci-003',
-          prompt: question,
-          max_tokens: 150,
-          temperature: 0.7,
-        }),
+        body: JSON.stringify({ question }),  // Envía la pregunta al backend
       });
 
       if (!response.ok) {
@@ -37,7 +24,7 @@ export default function Reports() {
       }
 
       const data = await response.json();
-      setAnswer(data.choices[0].text.trim());
+      setAnswer(data.answer);  // Muestra la respuesta del backend
     } catch (error) {
       setAnswer(`Error al obtener la respuesta: ${error.message}`);
     }
