@@ -5,6 +5,7 @@ from config import collection
 from bson import ObjectId
 import uuid
 from pydantic import BaseModel
+from motor.motor_asyncio import AsyncIOMotorClient
 
 app = FastAPI()
 
@@ -19,43 +20,28 @@ app.add_middleware(
 
 # Modelo de datos para Pydantic
 class User(BaseModel):
-    first_name: str  # Asegúrate de que este campo coincida con el de tu base de datos
-    phone: str  # Asegúrate de que este campo esté presente
-                #poner todos los campos!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# Función para generar un ID único
+    first_name: str
+    phone: str
+    plasticidad: str
+    permeabilidad: str
+    densidad: str
+    porosidad: str
+    oleosidad: str
+    hebra: str
+    textura: str
+
+    
 def generate_unique_id():
     return str(uuid.uuid4())
 
-# Crear o actualizar un usuario
-# @app.post("/clientes/", response_model=dict)
-# def crear_o_actualizar_usuario(user: User):
-#     try:
-#         # Buscar si el usuario ya existe por el campo 'phone'
-#         existing_user = collection.find_one({"phone": user.phone})
-
-#         if existing_user:
-#             # Actualizar los datos del usuario existente
-#             updated_data = {k: v for k, v in user.dict().items() if v is not None}
-#             collection.update_one({"phone": user.phone}, {"$set": updated_data})
-#             return {"message": "Usuario actualizado exitosamente"}
-#         else:
-#             # Crear un nuevo usuario si no existe
-#             user_data = user.dict()
-#             user_data["unique_id"] = generate_unique_id()  # Generar unique_id
-#             collection.insert_one(user_data)
-#             return {"message": "Usuario creado exitosamente"}
-
-#     except Exception as e:
-#         print(f"Error al crear o actualizar usuario: {e}")
-#         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/clientes/", response_model=List[dict])
-def obtener_clientes():
+async def obtener_clientes():
     try:
         clientes = collection.find()
         lista_clientes = []
 
-        for cliente in clientes:
+        async for cliente in clientes:
             cliente['_id'] = str(cliente['_id'])  # Convertir ObjectId a str
             lista_clientes.append(cliente)
 
@@ -67,55 +53,65 @@ def obtener_clientes():
     except Exception as e:
         print(f"Error al obtener clientes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
     
-
-@app.put("/clientes/{id}", response_model=dict)
-def actualizar_usuario(id: str, user: User):
+# @app.post("/clientes/")
+# async def crear_o_actualizar_usuario(user: User):
+#     existing_user = await collection.find_one({"id":usuario.id})
+#     if existing_user:
+#         # Si el usuario existe, actualiza sus datos
+#         await collection.update_one({"id": usuario.id}, {"$set": usuario.dict()})
+#         return {"message": "Usuario actualizado", "data": usuario}
+#     else:
+#         # Si no existe, crea un nuevo usuario
+#         await collection.insert_one(usuario.dict())
+#         return {"message": "Usuario creado", "data":usuario}
+    
+    
+@app.post("/clientes/", response_model=dict)
+async def crear_o_actualizar_usuario(user: User):
     try:
-        # Verificar si el usuario existe
-        existing_user = collection.find_one({"id": id})
+        # Buscar si el usuario ya existe por el campo 'phone'
+        existing_user = collection.find_one({"phone": user.phone})
 
         if existing_user:
-            # Actualizar el usuario existente
+            # Actualizar los datos del usuario existente
             updated_data = {k: v for k, v in user.dict().items() if v is not None}
-            result = collection.update_one({"id": id}, {"$set": updated_data})
-
-            if result.modified_count:
-                return {"message": "Usuario actualizado exitosamente"}
-            else:
-                raise HTTPException(status_code=404, detail="No se encontraron cambios para actualizar")
+            collection.update_one({"phone": user.phone}, {"$set": updated_data})
+            return {"message": "Usuario actualizado exitosamente"}
         else:
-            # Si el usuario no existe, puedes optar por crear uno nuevo
-            # collection.insert_one(user.dict())
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+            # Crear un nuevo usuario si no existe
+            user_data = user.dict()
+            user_data["unique_id"] = generate_unique_id()  # Generar unique_id
+            collection.insert_one(user_data)
+            return {"message": "Usuario creado exitosamente"}
+
+    except Exception as e:
+        print(f"Error al crear o actualizar usuario: {e}")
+        raise HTTPException(status_code=500, detail=str(e))    
+
+
+# Actualizar un usuario existente
+@app.put("/clientes/{unique_id}", response_model=dict)
+async def actualizar_usuario(unique_id: str, user: User):
+    try:
+        updated_data = {k: v for k, v in user.dict().items() if v is not None}
+        result = await collection.update_one({"unique_id": unique_id}, {"$set": updated_data})
+
+        if result.modified_count > 0:
+            return {"message": "Usuario actualizado exitosamente"}
+        else:
+            raise HTTPException(status_code=404, detail="No se encontró el usuario o no hubo cambios")
 
     except Exception as e:
         print(f"Error al actualizar usuario: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Actualizar un usuario existente
-# @app.put("/clientes/{unique_id}", response_model=dict)
-# def actualizar_usuario(unique_id: str, user: User):
-#     try:
-#         updated_data = {k: v for k, v in user.dict().items() if v is not None}
-#         result = collection.update_one({"unique_id": unique_id}, {"$set": updated_data})
-
-#         if result.modified_count:
-#             return {"message": "Usuario actualizado exitosamente"}
-#         else:
-#             raise HTTPException(status_code=404, detail="No se encontró el usuario o no hubo cambios")
-
-#     except Exception as e:
-#         print(f"Error al actualizar usuario: {e}")
-#         raise HTTPException(status_code=500, detail=str(e))
 
 # Eliminar un usuario por ID
 @app.delete("/clientes/{unique_id}", response_model=dict)
-def eliminar_usuario(unique_id: str):
+async def eliminar_usuario(unique_id: str):
     try:
-        result = collection.delete_one({"unique_id": unique_id})
+        result = await collection.delete_one({"unique_id": unique_id})
 
         if result.deleted_count:
             return {"message": "Usuario eliminado exitosamente"}
@@ -128,11 +124,10 @@ def eliminar_usuario(unique_id: str):
 
 
 @app.get("/clientes/count", response_model=dict)
-def contar_clientes():
+async def contar_clientes():
     try:
-        total_clientes = collection.count_documents({})
+        total_clientes = await collection.count_documents({})
         return {"total_clientes": total_clientes}
     except Exception as e:
         print(f"Error al contar clientes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-

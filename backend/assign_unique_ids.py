@@ -1,19 +1,20 @@
 import uuid
-from config import collection  # Asegúrate de que `collection` esté disponible en config.py
+from config import collection 
+from motor.motor_asyncio import AsyncIOMotorClient
 
 # Función para generar un ID único
 def generate_unique_id():
     return str(uuid.uuid4())
 
-def assign_unique_ids():
+async def assign_unique_ids():
     try:
         # Obtener todos los documentos que no tienen `unique_id`
         documentos_sin_unique_id = collection.find({"unique_id": {"$exists": False}})
         
-        for doc in documentos_sin_unique_id:
+        async for doc in documentos_sin_unique_id:
             new_id = generate_unique_id()
             # Asignar un nuevo `unique_id` al documento
-            result = collection.update_one(
+            result = await collection.update_one(
                 {"_id": doc["_id"]},  # Usar `_id` para identificar el documento
                 {"$set": {"unique_id": new_id}}
             )
@@ -27,4 +28,5 @@ def assign_unique_ids():
         print(f"Error al asignar unique_ids: {e}")
 
 if __name__ == "__main__":
-    assign_unique_ids()
+    import asyncio
+    asyncio.run(assign_unique_ids())
